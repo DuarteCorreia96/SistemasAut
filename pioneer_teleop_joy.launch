@@ -1,0 +1,38 @@
+<launch>
+
+    <!-- Select serial port !-->
+    <arg name="port" value="/dev/ttyUSB0"/>
+    <param name="RosAria/port" value="$(arg port)"/>
+
+    <node pkg="rosaria" name="pioneer" type="RosAria"/>
+
+    <!-- Remote Controller !-->
+    <arg name="joy_config" default="ps2"/>
+    <!-- List input devices with $ ls /dev/input !-->
+    <!-- Check http://wiki.ros.org/joy/Tutorials/ConfiguringALinuxJoystick !-->
+    <arg name="joy_dev" default="/dev/input/js1"/>
+    <arg name="config_filepath" default="$(find teleop_twist_joy)/config/$(arg joy_config).config.yaml"/>
+  
+    <node pkg="joy" type="joy_node" name="joy_node">
+        <param name="dev" value="$(arg joy_dev)"/>
+        <param name="deadzone" value="0.3"/>
+        <param name="autorepeat_rate" value="20"/>
+    </node>
+
+    <node pkg="teleop_twist_joy" name="teleop_twist_joy" type="teleop_node">
+        <rosparam command="load" file="$(arg config_filepath)"/>
+        <remap from="cmd_vel" to="/pioneer/cmd_vel"/>
+    </node>
+    
+    <node pkg="hokuyo_node" name="lidar" type="hokuyo_node"/>
+
+    <!-- TFs for Rviz & Gmapping !-->
+    <node pkg="tf" type="static_transform_publisher" name="tf_map_odom" args="0 0 0 0 0 0 map odom 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_base_laser" args="0.2 0 0.2 0 0 0 base_link laser 100"/>
+
+    <!-- Add /map topic to Rviz to visualise the map !-->
+    <node pkg="gmapping" name="gmapping" type="slam_gmapping">
+        <remap from="scan" to="scan"/>
+    </node>
+
+</launch>
