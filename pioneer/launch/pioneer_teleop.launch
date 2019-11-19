@@ -1,0 +1,22 @@
+<launch>
+
+    <!-- Select serial port !-->
+    <arg name="port" value="/dev/ttyUSB0"/>
+    <param name="RosAria/port" value="$(arg port)"/>
+
+    <node pkg="rosaria" name="pioneer" type="RosAria"/>
+        
+    <node pkg="teleop_twist_keyboard" name="keyboard_cmd" type="teleop_twist_keyboard.py">
+        <remap from="cmd_vel" to="/pioneer/cmd_vel"/>
+    </node>
+
+    <node pkg="hokuyo_node" name="lidar" type="hokuyo_node"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="tf_map_odom" args="0 0 0 0 0 0 map odom 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_base_laser" args="0.2 0 0.2 0 0 0 base_link laser 100"/>
+
+    <node pkg="gmapping" name="gmapping" type="slam_gmapping">
+        <remap from="scan" to="scan"/>
+    </node>
+
+</launch>
