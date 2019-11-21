@@ -85,9 +85,14 @@ class EKF_SLAM():
         self.estimate   = np.zeros((3, 1))
         self.covariance = np.zeros((3, 3))
 
+        self.ids = Correspondence()
+
+        # Tunning factors of the EKF
         self.R = np.identity(3) * 0.0
         self.Q = np.diag([0.0, 0.0])
-        self.ids = Correspondence()
+
+        # Value to initialize convariance of landmarks
+        self.max_conv = 1000
 
 
     def print_state(self):
@@ -107,9 +112,8 @@ class EKF_SLAM():
             self.estimate[-2] = self.estimate[0] + measure.r * np.cos(measure.theta + self.estimate[2])
             self.estimate[-1] = self.estimate[1] + measure.r * np.sin(measure.theta + self.estimate[2])
 
-        max_value = 1000
-        self.covariance = np.hstack((self.covariance, max_value * np.ones((self.covariance.shape[0], 2))))
-        self.covariance = np.vstack((self.covariance, max_value * np.ones((2, self.covariance.shape[1]))))
+        self.covariance = np.hstack((self.covariance, self.max_conv * np.ones((self.covariance.shape[0], 2))))
+        self.covariance = np.vstack((self.covariance, self.max_conv * np.ones((2, self.covariance.shape[1]))))
 
 
     def prediction_step(self, vl, vr, dt):
@@ -132,21 +136,15 @@ class EKF_SLAM():
     def update_step(self, measurements):
 
         # This should be modfied after confirming measurements data structure
-        sum_estimate    = np.zeros((self.estimate.shape[0], 1))
-        sum_convariance = np.zeros(self.covariance.shape)
-
         for measure in measurements:
-            
             j = self.ids.get_index(measure.id)
             if (j == None):
 
                 j = self.ids.add_id(measure.id)
                 self.add_landmark(measure)
 
-                sum_estimate = np.vstack((sum_estimate, np.zeros((2, 1))))
-
-                sum_convariance = np.hstack((sum_convariance, np.zeros((sum_convariance.shape[0], 2))))
-                sum_convariance = np.vstack((sum_convariance, np.zeros((2, sum_convariance.shape[1]))))
+        sum_estimate    = np.zeros((self.estimate.shape[0], 1))
+        sum_convariance = np.zeros(self.covariance.shape)
 
         for measure in measurements:
             
@@ -157,16 +155,16 @@ class EKF_SLAM():
             j_y = 4 + j * 2
 
             # Calculate deviations to robot
-            deviat_x = (self.estimate[j_x] - self.estimate[0])[0]
-            deviat_y = (self.estimate[j_y] - self.estimate[1])[0]
-            deviat   = np.array([deviat_x, deviat_y])
+            deviat_x = np.asscalar(self.estimate[j_x] - self.estimate[0])
+            deviat_y = np.asscalar(self.estimate[j_y] - self.estimate[1])
+            deviat   = np.matrix([[deviat_x], [deviat_y]])
 
-            sq_error = np.transpose(deviat).dot(deviat)
+            sq_error = np.asscalar(np.transpose(deviat).dot(deviat))
             error    = np.sqrt(sq_error)
 
             estimation_x = error
-            estimation_y = (np.arctan2(deviat_x, deviat_y) - self.estimate[2])[0]
-            estimation   =  np.matrix([[estimation_x], [estimation_y]])
+            estimation_y = np.asscalar(np.arctan2(deviat_y, deviat_x) - self.estimate[2])
+            estimation   = np.matrix([[estimation_x], [estimation_y]])
 
             F_xj = np.zeros((5, self.covariance.shape[1]))
             F_xj[ :3, :3] = np.identity(3) 
@@ -181,8 +179,6 @@ class EKF_SLAM():
             K = K.dot(np.linalg.inv(K_aux))
 
             measurement = np.matrix([[measure.r], [measure.theta]])
-            print(np.transpose(measurement))
-            print(np.transpose(estimation))
 
             sum_estimate    += K.dot(measurement - estimation) 
             sum_convariance += K.dot(H_j)
@@ -196,8 +192,6 @@ def main():
     ekf = EKF_SLAM(MotionModel)
     ekf.print_state()
 
-    ekf.print_state()
-
     ekf.prediction_step(1, 1.1, 1)
     ekf.print_state()
 
@@ -205,9 +199,6 @@ def main():
     ekf.update_step(measurs)
     ekf.print_state()
 
-    measurs = [Measurement(1, 2, 0.4), Measurement(2, 2, 0.25)]
-    ekf.update_step(measurs)
-    ekf.print_state()
 
 if __name__ == "__main__":
     main()
