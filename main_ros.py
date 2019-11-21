@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import rospy
+import numpy as np
 from nav_msgs.msg import Odometry
 from aruco_pose_subscriber import *
 
