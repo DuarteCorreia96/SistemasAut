@@ -1,48 +1,82 @@
 import numpy as np
 import sys
 
+import rospy
+from nav_msgs.msg import Odometry
+
 class MotionModel():
 
-    d = 0.20
+    L = 0.25
+    sigma = 0.01
+
+    # d = 0.20
+
+    # @staticmethod
+    # def get_Pose_Prediction(current, vl, vr, dt):
+
+    #     v = (vr + vl) / 2
+    #     w = (vr - vl) / 2 / MotionModel.d
+    #     w_dt = w * dt
+
+    #     if (w != 0):
+    #         v_w  = v / w
+    #         x = - v_w * np.sin(current[2]) + v_w * np.sin(current[2] + w_dt)
+    #         y =   v_w * np.cos(current[2]) - v_w * np.cos(current[2] + w_dt)
+
+    #     else:
+    #         x = v * dt * np.cos(current[2])
+    #         y = v * dt * np.sin(current[2])
+
+    #     return current + np.transpose(np.array([x, y, w_dt]))
 
     @staticmethod
-    def get_Pose_Prediction(current, vl, vr, dt):
+    def get_Pose_Prediction(current, v, w, dt):
 
-        v = (vr + vl) / 2
-        w = (vr - vl) / 2 / MotionModel.d
-        w_dt = w * dt
+        x = v*np.cos(current[2])*dt
+        y = v*np.sin(current[2])*dt
+        theta = w*dt
 
-        if (w != 0):
-            v_w  = v / w
-            x = - v_w * np.sin(current[2]) + v_w * np.sin(current[2] + w_dt)
-            y =   v_w * np.cos(current[2]) - v_w * np.cos(current[2] + w_dt)
+        return current + np.array([x, y, theta])
 
-        else:
-            x = v * dt * np.cos(current[2])
-            y = v * dt * np.sin(current[2])
-
-        return current + np.transpose(np.array([x, y, w_dt])) 
-
-    
     @staticmethod
-    def get_Pose_Covariance(current, vl, vr, dt):
+    def get_Pose_Covariance(current, current_cov, v, dt):
 
-        v = (vr + vl) / 2
-        w = (vr - vl) / 2 / MotionModel.d
-        w_dt = w * dt
+        Gx = np.identity(3)
+        c = np.cos(current[2])
+        s = np.sin(current[2])
 
-        covariance = np.identity(3)
+        B = np.zeros((3,3))
+        B[0,2] = -s*v*dt
+        B[1,2] = c*v*dt
+        Gx += B
 
-        if (w != 0):
-            v_w  = v / w
-            covariance[0][2] =   v_w * np.cos(current[2]) + v_w * np.cos(current[2] + w_dt)
-            covariance[1][2] = - v_w * np.sin(current[2]) + v_w * np.sin(current[2] + w_dt)
+        Ge = np.array([[c,c], [s,s], [1/MotionModel.L,-1/MotionModel.L]])
 
-        else:
-            covariance[0][2] = dt # This shold probably be some constant ???
-            covariance[1][2] = dt
+        R = (MotionModel.sigma**2)*np.matmul(Ge,Ge.T)
+        covariance = Gx.dot(current_cov).dot(Gx.T) + R
 
         return covariance
+
+    
+    # @staticmethod
+    # def get_Pose_Covariance(current, vl, vr, dt):
+
+    #     v = (vr + vl) / 2
+    #     w = (vr - vl) / 2 / MotionModel.d
+    #     w_dt = w * dt
+
+    #     covariance = np.identity(3)
+
+    #     if (w != 0):
+    #         v_w  = v / w
+    #         covariance[0][2] =   v_w * np.cos(current[2]) + v_w * np.cos(current[2] + w_dt)
+    #         covariance[1][2] = - v_w * np.sin(current[2]) + v_w * np.sin(current[2] + w_dt)
+
+    #     else:
+    #         covariance[0][2] = dt # This shold probably be some constant ???
+    #         covariance[1][2] = dt
+
+    #     return covariance
 
 class Correspondence():
     """ This class is just to save the already found marers ids 
@@ -75,6 +109,22 @@ class Measurement():
         self.id = id
         self.r  = distance
         self.theta = angle
+
+class Odom():
+
+    cur_time = 0
+    v = 0
+    w = 0
+    dt = 0
+
+    @staticmethod
+    def retrieveOdom(msg):
+        Odom.v = msg.twist.twist.linear.x
+        Odom.w = msg.twist.twist.angular.z
+        new_cur_time = msg.header.stamp.nsecs 
+        
+        Odom.dt = (new_cur_time - Odom.cur_time)/1e-9
+        Odom.cur_time = new_cur_time
 
 
 class EKF_SLAM():
@@ -116,22 +166,30 @@ class EKF_SLAM():
         self.covariance = np.vstack((self.covariance, self.max_conv * np.ones((2, self.covariance.shape[1]))))
 
 
-    def prediction_step(self, vl, vr, dt):
+    # def prediction_step(self, vl, vr, dt):
+
+    #     # Update estimate of pose
+    #     self.estimate[:3, 0] += self.motion_model.get_Pose_Prediction(self.estimate[:3, 0], vl, vr, dt)
+
+    #     # Update pose convariance
+    #     jacob = self.motion_model.get_Pose_Covariance(self.estimate[:3], vl, vr, dt)
+    #     self.covariance[ :3,  :3] = jacob.dot(self.covariance[ :3,  :3]).dot(np.transpose(jacob))
+
+    #     # Update landmarks convariances in relation to pose
+    #     aux = jacob.dot(self.covariance[ :3, 3: ]) 
+    #     self.covariance[ :3, 3: ] = aux
+    #     self.covariance[3: ,  :3] = np.transpose(aux)
+
+    #     # Add noise
+    #     self.covariance[ :3,  :3] += self.R
+
+    def prediction_step(self, v, w, dt):
 
         # Update estimate of pose
-        self.estimate[:3, 0] += self.motion_model.get_Pose_Prediction(self.estimate[:3, 0], vl, vr, dt)
+        self.estimate[:3, 0] += self.motion_model.get_Pose_Prediction(self.estimate[:3, 0], v, w, dt)
 
-        # Update pose convariance
-        jacob = self.motion_model.get_Pose_Covariance(self.estimate[:3], vl, vr, dt)
-        self.covariance[ :3,  :3] = jacob.dot(self.covariance[ :3,  :3]).dot(np.transpose(jacob))
-
-        # Update landmarks convariances in relation to pose
-        aux = jacob.dot(self.covariance[ :3, 3: ]) 
-        self.covariance[ :3, 3: ] = aux
-        self.covariance[3: ,  :3] = np.transpose(aux)
-
-        # Add noise
-        self.covariance[ :3,  :3] += self.R
+        # Update estimate of pose convariance
+        self.covariance[:3, :3] = self.motion_model.get_Pose_Covariance(self.estimate[:3, 0], self.covariance[:3, :3], v, dt)
 
     def update_step(self, measurements):
 
@@ -192,12 +250,20 @@ def main():
     ekf = EKF_SLAM(MotionModel)
     ekf.print_state()
 
-    ekf.prediction_step(1, 1.1, 1)
-    ekf.print_state()
+    rospy.init_node('pose_listener', anonymous=True)
+    rospy.Subscriber('/pioneer/pose', Odometry, Odom.retrieveOdom)
 
-    measurs = [Measurement(1, 2, 0.4), Measurement(2, 2, 0.25)]
-    ekf.update_step(measurs)
-    ekf.print_state()
+    rate = rospy.Rate(1)
+    while not rospy.is_shutdown():
+
+        ekf.prediction_step(Odom.v, Odom.w, Odom.dt)
+        ekf.print_state()
+
+        measurs = [Measurement(1, 2, 0.4), Measurement(2, 2, 0.25)]
+        ekf.update_step(measurs)
+        ekf.print_state()
+
+        rate.sleep()
 
 
 if __name__ == "__main__":
