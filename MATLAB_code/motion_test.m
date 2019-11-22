@@ -6,7 +6,7 @@ v_true = zeros(3,K);
 h = 0.01;
 
 sigma = 0.01;
-cmd = [0.1 0.02];
+cmd = [0.1 0.2];
 cov_m = zeros(3,3,K);
 
 

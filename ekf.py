@@ -1,6 +1,14 @@
 import numpy as np
 import sys
 
+def normalize_angle(angle):
+
+    angle = angle % (2 * np.pi)
+    if (angle > np.pi):
+        angle -= 2 * np.pi
+
+    return angle
+
 class MotionModel():
 
     L = 0.25
@@ -12,8 +20,11 @@ class MotionModel():
         x = v * np.cos(current[2]) * dt
         y = v * np.sin(current[2]) * dt
         theta = w*dt
+        
+        updated    = current + np.array([x, y, theta])
+        updated[2] = normalize_angle(updated[2])
 
-        return current + np.array([x, y, theta])
+        return updated
 
     @staticmethod
     def get_Pose_Covariance(current, current_cov, v, dt):
@@ -32,6 +43,7 @@ class MotionModel():
         R = (MotionModel.sigma ** 2) * np.matmul(Ge, Ge.T)
 
         return [Gx, R]
+
 
 class Correspondence():
     """ This class is just to save the already found marers ids 
@@ -57,13 +69,22 @@ class Correspondence():
         else:
             return None
 
+
 class Measurement():
 
-    def __init__(self, id, distance, angle):
+    def __init__(self, mark_id, distance, angle):
 
-        self.id = id
+        self.id = mark_id
         self.r  = distance
         self.theta = angle
+
+    def __str__(self):
+        
+        to_print  = "  id: " + str(self.id)
+        to_print += "\t r: " + str(self.r)
+        to_print += "\t theta: " + str(self.theta)
+
+        return to_print
 
 
 class EKF_SLAM():
@@ -77,20 +98,20 @@ class EKF_SLAM():
         self.ids = Correspondence()
 
         # Tunning factors of the EKF
-        self.Q = np.diag([0.0, 0.0])
+        self.Q = np.diag([10, 10])
 
         # Value to initialize convariance of landmarks
-        self.max_conv = 1000
-
+        self.max_conv = 0.01
 
     def print_state(self):
 
-        np.set_printoptions(precision=3)
-        np.set_printoptions(suppress=True)
+        np.set_printoptions(precision = 3)
+        np.set_printoptions(suppress  = True)
+        np.set_printoptions(linewidth = 200)
 
         print('\n\n')
-        print('Estimate: \n', self.estimate)
-        print('Covariance: \n', self.covariance)
+        print('Estimate^T: \n', np.transpose(self.estimate))
+        print('Covariance: \n', self.covariance[:3])
 
     def add_landmark(self, measure = None):
 
@@ -103,15 +124,14 @@ class EKF_SLAM():
         self.covariance = np.hstack((self.covariance, self.max_conv * np.ones((self.covariance.shape[0], 2))))
         self.covariance = np.vstack((self.covariance, self.max_conv * np.ones((2, self.covariance.shape[1]))))
 
-
     def prediction_step(self, v, w, dt):
 
         # Update estimate of pose
-        self.estimate[:3, 0] += self.motion_model.get_Pose_Prediction(self.estimate[:3, 0], v, w, dt)
-        self.estimate[2] =  np.arctan2(np.sin(self.estimate[2]), np.cos(self.estimate[2]))
+        self.estimate[:3, 0] = self.motion_model.get_Pose_Prediction(self.estimate[:3, 0], v, w, dt)
+        self.estimate[2]     = normalize_angle(self.estimate[2])
 
         # Update pose convariance
-        [jacob, R] = self.motion_model.get_Pose_Covariance(self.estimate[:3], v, w, dt)
+        [jacob, R] = self.motion_model.get_Pose_Covariance(self.estimate[:3], self.covariance[ :3,  :3], v, dt)
         self.covariance[ :3,  :3] = jacob.dot(self.covariance[ :3,  :3]).dot(np.transpose(jacob))
 
         # Update landmarks convariances in relation to pose
@@ -173,6 +193,5 @@ class EKF_SLAM():
             sum_convariance += K.dot(H_j)
 
         self.estimate    = self.estimate + sum_estimate
-        self.estimate[2] =  np.arctan2(np.sin(self.estimate[2]), np.cos(self.estimate[2]))
+        self.estimate[2] = normalize_angle(self.estimate[2])
         self.covariance  = (np.identity(self.covariance.shape[0]) - sum_convariance).dot(self.covariance)
-
