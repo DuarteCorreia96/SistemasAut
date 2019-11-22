@@ -101,7 +101,7 @@ class EKF_SLAM():
         self.Q = np.diag([10, 10])
 
         # Value to initialize convariance of landmarks
-        self.max_conv = 0.01
+        self.max_conv = 10000
 
     def print_state(self):
 
@@ -111,7 +111,7 @@ class EKF_SLAM():
 
         print('\n\n')
         print('Estimate^T: \n', np.transpose(self.estimate))
-        print('Covariance: \n', self.covariance[:3])
+        print('Covariance: \n', self.covariance)
 
     def add_landmark(self, measure = None):
 
@@ -121,8 +121,11 @@ class EKF_SLAM():
             self.estimate[-2] = self.estimate[0] + measure.r * np.cos(measure.theta + self.estimate[2])
             self.estimate[-1] = self.estimate[1] + measure.r * np.sin(measure.theta + self.estimate[2])
 
-        self.covariance = np.hstack((self.covariance, self.max_conv * np.ones((self.covariance.shape[0], 2))))
-        self.covariance = np.vstack((self.covariance, self.max_conv * np.ones((2, self.covariance.shape[1]))))
+        self.covariance = np.hstack((self.covariance, np.zeros((self.covariance.shape[0], 2))))
+        self.covariance = np.vstack((self.covariance, np.zeros((2, self.covariance.shape[1]))))
+
+        self.covariance[-1, -1] = self.max_conv
+        self.covariance[-2, -2] = self.max_conv
 
     def prediction_step(self, v, w, dt):
 
