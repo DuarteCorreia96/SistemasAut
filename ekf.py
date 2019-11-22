@@ -98,10 +98,10 @@ class EKF_SLAM():
         self.ids = Correspondence()
 
         # Tunning factors of the EKF
-        self.Q = np.diag([10, 10])
+        self.Q = np.diag([1, 1])
 
         # Value to initialize convariance of landmarks
-        self.max_conv = 10000
+        self.max_conv = 100000
 
     def print_state(self):
 

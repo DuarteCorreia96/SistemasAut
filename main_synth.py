@@ -39,9 +39,9 @@ class Robot():
 
 def main():
 
-    v = 0.5
+    v = 1
     w = 0.1
-    dt = 1
+    dt = 0.5
 
     landmarks = []
     landmarks.append(Landmark(1, 2,  2))
@@ -60,9 +60,14 @@ def main():
     ekf.print_state()
     print("Current", robot.current)
 
+    steps = 8
+    plot_step = steps // 8 
+    if(plot_step - (steps / 8) != 0):
+        plot_step += 1
+
     counter = 330
     plt.figure()
-    for i in range(8):
+    for i in range(steps):
 
         measurements = []
         for landmark in landmarks:
@@ -73,27 +78,28 @@ def main():
 
         ekf.update_step(measurements)
 
-        counter += 1
-        plt.subplot(counter)
+        if (i % plot_step == 0):
+            counter += 1
+            plt.subplot(counter)
 
-        plt.plot(robot.current[0], robot.current[1], 'gs')
-        plt.plot(ekf.estimate[0] , ekf.estimate[1] , 'ro', markersize=2)
+            plt.plot(robot.current[0], robot.current[1], 'gs')
+            plt.plot(ekf.estimate[0] , ekf.estimate[1] , 'ro', markersize=2)
 
-        plt.plot(landmarks_x, landmarks_y, 'g^')
+            plt.plot(landmarks_x, landmarks_y, 'g^')
 
-        j = 0
-        for _ in landmarks:
-            x  = 3 + j * 2
-            y  = 4 + j * 2
-            j += 1
-            plt.plot(ekf.estimate[x], ekf.estimate[y], 'rx')
+            j = 0
+            for _ in landmarks:
+                x  = 3 + j * 2
+                y  = 4 + j * 2
+                j += 1
+                plt.plot(ekf.estimate[x], ekf.estimate[y], 'rx')
 
-        plt.grid(True)
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.axis([-1, 5, -1, 5])
+            plt.grid(True)
+            plt.xlabel('x')
+            plt.ylabel('y')
+            plt.axis([-1, 5, -1, 5])
 
-        plt.title('Estimation at time:' + str(i))
+            plt.title('Estimation at time: ' + str(np.round(i * dt, decimals=2)) + " sec")
 
         robot.move(v, w, dt)
         ekf.prediction_step(v, w, dt)
