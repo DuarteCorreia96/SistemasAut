@@ -45,8 +45,8 @@ def main():
     steps = 1000
     _print = False
 
-    mu_v = 1
-    mu_w = 1
+    mu_v = 0.5
+    mu_w = 0.5
 
     landmarks = []
     landmarks.append(Landmark(1, 2,  2))
@@ -74,6 +74,15 @@ def main():
 
     counter = 330
     plt.figure()
+
+    robot_path_x = [0]
+    robot_path_y = [0]
+
+    estim_path_x = [0]
+    estim_path_y = [0]
+
+    noise_path_x = [0]
+    noise_path_y = [0]
     for i in range(steps):
 
         measurements = []
@@ -91,7 +100,20 @@ def main():
 
             plt.plot(robot.current[0], robot.current[1], 'gs')
             plt.plot(robot_noise.current[0], robot_noise.current[1], 'rs')
-            plt.plot(ekf.estimate[0] , ekf.estimate[1] , 'yo', markersize=2)
+            plt.plot(ekf.estimate[0], ekf.estimate[1] , 'yo', markersize=2)
+
+            robot_path_x.append(robot.current[0])
+            robot_path_y.append(robot.current[1])
+
+            estim_path_x.append(ekf.estimate[0])
+            estim_path_y.append(ekf.estimate[1])
+
+            noise_path_x.append(robot_noise.current[0])
+            noise_path_y.append(robot_noise.current[1])
+
+            plt.plot(robot_path_x, robot_path_y, 'g')
+            plt.plot(estim_path_x, estim_path_y, 'y')
+            plt.plot(noise_path_x, noise_path_y, 'r')
 
             plt.plot(landmarks_x, landmarks_y, 'g^')
 
