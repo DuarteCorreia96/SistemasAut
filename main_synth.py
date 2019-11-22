@@ -39,9 +39,14 @@ class Robot():
 
 def main():
 
-    v = 1
-    w = 0.1
-    dt = 0.5
+    v = 0.5
+    w = 0.15
+    dt = 0.01
+    steps = 1000
+    _print = False
+
+    mu_v = 1
+    mu_w = 1
 
     landmarks = []
     landmarks.append(Landmark(1, 2,  2))
@@ -56,11 +61,13 @@ def main():
         landmarks_y.append(landmark.y)
 
     robot = Robot()
+    robot_noise = Robot()
     ekf = EKF_SLAM(MotionModel)
-    ekf.print_state()
-    print("Current", robot.current)
 
-    steps = 8
+    if (_print == True):
+        ekf.print_state()
+        print("Current", robot.current)
+
     plot_step = steps // 8 
     if(plot_step - (steps / 8) != 0):
         plot_step += 1
@@ -83,7 +90,8 @@ def main():
             plt.subplot(counter)
 
             plt.plot(robot.current[0], robot.current[1], 'gs')
-            plt.plot(ekf.estimate[0] , ekf.estimate[1] , 'ro', markersize=2)
+            plt.plot(robot_noise.current[0], robot_noise.current[1], 'rs')
+            plt.plot(ekf.estimate[0] , ekf.estimate[1] , 'yo', markersize=2)
 
             plt.plot(landmarks_x, landmarks_y, 'g^')
 
@@ -97,15 +105,21 @@ def main():
             plt.grid(True)
             plt.xlabel('x')
             plt.ylabel('y')
-            plt.axis([-1, 5, -1, 5])
+            plt.axis([-1, 10, -1, 6])
 
             plt.title('Estimation at time: ' + str(np.round(i * dt, decimals=2)) + " sec")
 
         robot.move(v, w, dt)
-        ekf.prediction_step(v, w, dt)
 
-        ekf.print_state()
-        print("Current", robot.current)
+        v_noise = v + random.gauss(0, mu_v)
+        w_noise = w + random.gauss(0, mu_w)
+
+        robot_noise.move(v_noise, w_noise, dt)
+        ekf.prediction_step(v_noise, w_noise, dt)
+
+        if (_print == True):
+            ekf.print_state()
+            print("Current", robot.current)
 
 
     plt.subplot(counter + 1)
@@ -114,7 +128,8 @@ def main():
     legend_elements = [ Line2D([0], [0], marker='^', color='g', label='Landmarks'),
                         Line2D([0], [0], marker='x', color='r', label='Landmarks_est'),
                         Line2D([0], [0], marker='s', color='g', label='Robot'),
-                        Line2D([0], [0], marker='o', color='r', label='Robot_est')
+                        Line2D([0], [0], marker='o', color='y', label='Robot_est'),
+                        Line2D([0], [0], marker='s', color='r', label='Robot_Odom')
                     ]
     plt.legend(handles=legend_elements, loc='lower left')
 
