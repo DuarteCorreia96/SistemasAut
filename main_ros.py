@@ -3,18 +3,19 @@
 import rospy
 import numpy as np
 from nav_msgs.msg import Odometry
-from aruco_pose_subscriber import *
+from aruco_msgs.msg import MarkerArray
 
 from ekf import Measurement, EKF_SLAM, MotionModel
 
 class Aruco():
+    ar_list = []
+
     @staticmethod
     def callback(data):
-        Aruco.list = []
-        for i in range(len(data)):
-            aruco_id = data.markers[i].id
-            r,theta  = convert_pose(data.markers[i].pose.pose.position.x, data.markers[i].pose.pose.position.y)
-            Aruco.list.append(Measurement(aruco_id, r, theta))
+        for marker in data.markers:
+            aruco_id = marker.id
+            r,theta  = convert_pose(marker.pose.pose.position.x, marker.pose.pose.position.z)
+            Aruco.ar_list.append(Measurement(aruco_id, r, theta))
 
 
 def convert_pose(pose_x, pose_y):
@@ -46,7 +47,7 @@ def main():
 
     rospy.init_node('pose_listener', anonymous=True)
     rospy.Subscriber('/pioneer/pose', Odometry, Odom.retrieveOdom)
-    rospy.init_node('aruco_pose_listener', anonymous=True)
+   # rospy.init_node('aruco_pose_listener', anonymous=True)
     rospy.Subscriber("/aruco_marker_publisher/markers", MarkerArray, Aruco.callback)
 
     rate = rospy.Rate(1)
@@ -56,7 +57,7 @@ def main():
         ekf.print_state()
 
         #measurs = [Measurement(1, 2, 0.4), Measurement(2, 2, 0.25)]
-        ekf.update_step(Aruco.list)
+        ekf.update_step(Aruco.ar_list)
         ekf.print_state()
 
         rate.sleep()
