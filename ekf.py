@@ -4,7 +4,7 @@ import sys
 def normalize_angle(angle):
 
     angle = angle % (2 * np.pi)
-    if (angle > np.pi):
+    if (angle >= np.pi):
         angle -= 2 * np.pi
 
     return angle
@@ -12,17 +12,16 @@ def normalize_angle(angle):
 class MotionModel():
 
     L = 0.25
-    sigma = 0.01
+    sigma = 0.05
 
     @staticmethod
     def get_Pose_Prediction(current, v, w, dt):
 
-        x = v * np.cos(current[2]) * dt
-        y = v * np.sin(current[2]) * dt
-        theta = w*dt
+        x     = v * np.cos(current[2]) * dt
+        y     = v * np.sin(current[2]) * dt
+        theta = w * dt
         
-        updated    = current + np.array([x, y, theta])
-        updated[2] = normalize_angle(updated[2])
+        updated = current + np.array([x, y, theta])
 
         return updated
 
@@ -89,7 +88,7 @@ class Measurement():
 
 class EKF_SLAM():
 
-    def __init__(self, MotionModel):
+    def __init__(self, MotionModel, Q = np.diag([0.1, 0.01])):
  
         self.motion_model = MotionModel
         self.estimate   = np.zeros((3, 1))
@@ -98,10 +97,10 @@ class EKF_SLAM():
         self.ids = Correspondence()
 
         # Tunning factors of the EKF
-        self.Q = np.diag([1, 1])
+        self.Q = Q
 
         # Value to initialize convariance of landmarks
-        self.max_conv = 100000
+        self.max_conv = 10000000
 
     def print_state(self):
 
@@ -131,7 +130,6 @@ class EKF_SLAM():
 
         # Update estimate of pose
         self.estimate[:3, 0] = self.motion_model.get_Pose_Prediction(self.estimate[:3, 0], v, w, dt)
-        self.estimate[2]     = normalize_angle(self.estimate[2])
 
         # Update pose convariance
         [jacob, R] = self.motion_model.get_Pose_Covariance(self.estimate[:3], self.covariance[ :3,  :3], v, dt)
@@ -176,14 +174,15 @@ class EKF_SLAM():
 
             estimation_r     = error
             estimation_theta = np.asscalar(np.arctan2(deviat_y, deviat_x) - self.estimate[2])
+            estimation_theta = normalize_angle(estimation_theta)
             estimation       = np.matrix([[estimation_r], [estimation_theta]])
 
             F_xj = np.zeros((5, self.covariance.shape[1]))
             F_xj[ :3, :3] = np.identity(3) 
             F_xj[3: , j_x:j_y + 1] = np.identity(2)
 
-            H_j_x = np.array([error*deviat_x, -error*deviat_y, 0, -error*deviat_x, error*deviat_y])
-            H_j_y = np.array([deviat_y, deviat_x, -1, -deviat_y, -deviat_x])
+            H_j_x = np.array([-error*deviat_x, -error*deviat_y, 0, error*deviat_x, error*deviat_y])
+            H_j_y = np.array([deviat_y, -deviat_x, -sq_error, -deviat_y, deviat_x])
             H_j   = (1 / sq_error * np.matrix([H_j_x, H_j_y])).dot(F_xj)
 
             K = self.covariance.dot(np.transpose(H_j))
@@ -196,5 +195,4 @@ class EKF_SLAM():
             sum_convariance += K.dot(H_j)
 
         self.estimate    = self.estimate + sum_estimate
-        self.estimate[2] = normalize_angle(self.estimate[2])
         self.covariance  = (np.identity(self.covariance.shape[0]) - sum_convariance).dot(self.covariance)
