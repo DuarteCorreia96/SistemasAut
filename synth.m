@@ -1,39 +1,44 @@
 clear classes
 
-pymod = py.importlib.import_module('synth_matlab');
-py.importlib.reload(pymod);
+pymod_matlab = py.importlib.import_module('synth_matlab');
+pymod_ekf    = py.importlib.import_module('ekf');
+pymod_models = py.importlib.import_module('synth_base');
+
+py.importlib.reload(pymod_matlab);
+py.importlib.reload(pymod_ekf);
+py.importlib.reload(pymod_models);
 
 % Parâmetros do ekf
-Q_diag = [1, 1];
-sigma  = 0.05;
+Q_diag = [0.1, 0.1];
+sigma  = 0.02;
 
 % Variâncias dos sensores
-mu_odom = [0.5, 0.1];
-mu_obse = [0.2, 0.05];
+mu_odom = [0.1, 0.05];
+mu_obse = [0.2, 0.08];
 
 ekf = py.synth_matlab.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse);
 
 % Controlos a dar ao robot
-v  = 0.6;
-w  = 0.15;
-dt = 0.02;
+v  = 0.9;
+w  = 0.1;
+dt = 0.01;
 
 % Mudança nos controlos a cada periodo
-w_var = 0.00003;
+w_var = 0.0001;
 v_var = 0;
 
 % Numero de ponto para a animação e quantos ciclos de ekf são skipped entre
 % frames
 skipped = 10;
-npoints = 300;
-xsize = [-4 6];
-ysize = [-1 10];
+npoints = 600;
+xsize = [-4 11];
+ysize = [-1 15];
 
 % Inserir landmarks no simulador
-ekf.add_landmark( 1, 2, 3)
-ekf.add_landmark( 2, 3, 3)
-ekf.add_landmark( 3, 0, 4)
-ekf.add_landmark( 4, 2, 4)
+ekf.add_landmark( 1, 5, 7)
+ekf.add_landmark( 3,-2, 10)
+ekf.add_landmark( 4, 8, 12)
+ekf.add_landmark( 5,-2, 1)
 
 % Não deve ser preciso mexer daqui para baixo
 landmarks_x = np_matlab(ekf.get_landmarks_x());
@@ -94,10 +99,10 @@ for i = 1:npoints * skipped
             h.Color = 'Blue';
             plot(h)
             hold on
-        catch       
+        catch
         end
         
-        for j = 0:length(landmarks_x) - 1
+        for j = 0: (length(covariance) - 3) / 2 - 1
 
             x = 4 + j * 2;
             y = 5 + j * 2;

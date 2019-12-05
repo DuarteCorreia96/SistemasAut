@@ -21,11 +21,11 @@ class Landmark():
 
         r     = np.sqrt(deviat_x ** 2 + deviat_y ** 2)     
         theta = np.arctan2(deviat_y, deviat_x) - current[2]
-        theta = normalize_angle(theta)
 
         # # Add noise
         r     += random.gauss(0, Landmark.mu_r)
         theta += random.gauss(0, Landmark.mu_theta)
+        theta  = normalize_angle(theta)
 
         return Measurement(self.id, abs(r), theta)
 

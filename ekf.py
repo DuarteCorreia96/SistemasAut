@@ -172,27 +172,28 @@ class EKF_SLAM():
             sq_error = np.asscalar(np.transpose(deviat).dot(deviat))
             error    = np.sqrt(sq_error)
 
-            estimation_r     = error
-            estimation_theta = np.asscalar(np.arctan2(deviat_y, deviat_x) - self.estimate[2])
-            estimation_theta = normalize_angle(estimation_theta)
-            estimation       = np.matrix([[estimation_r], [estimation_theta]])
+            if (sq_error != 0):
 
-            F_xj = np.zeros((5, self.covariance.shape[1]))
-            F_xj[ :3, :3] = np.identity(3) 
-            F_xj[3: , j_x:j_y + 1] = np.identity(2)
+                F_xj = np.zeros((5, self.covariance.shape[1]))
+                F_xj[ :3, :3] = np.identity(3) 
+                F_xj[3: , j_x:j_y + 1] = np.identity(2)
 
-            H_j_x = np.array([-error*deviat_x, -error*deviat_y, 0, error*deviat_x, error*deviat_y])
-            H_j_y = np.array([deviat_y, -deviat_x, -sq_error, -deviat_y, deviat_x])
-            H_j   = (1 / sq_error * np.matrix([H_j_x, H_j_y])).dot(F_xj)
+                H_x = np.array([-error*deviat_x, -error*deviat_y, 0, error*deviat_x, error*deviat_y]) / sq_error
+                H_y = np.array([deviat_y, -deviat_x, -sq_error, -deviat_y, deviat_x]) / sq_error
+                H   = np.matrix([H_x, H_y]).dot(F_xj)
 
-            K = self.covariance.dot(np.transpose(H_j))
-            K_aux = H_j.dot(self.covariance).dot(np.transpose(H_j)) + self.Q 
-            K = K.dot(np.linalg.inv(K_aux))
+                K     = self.covariance.dot(np.transpose(H))
+                K_aux = np.add(H.dot(self.covariance).dot(np.transpose(H)), self.Q) 
+                K     = K.dot(np.linalg.inv(K_aux))
 
-            measurement = np.matrix([[measure.r], [measure.theta]])
+                estimation_r     = error
+                estimation_theta = np.asscalar(np.arctan2(deviat_y, deviat_x) - self.estimate[2])
+                estimation_theta = normalize_angle(estimation_theta)
 
-            sum_estimate    += K.dot(measurement - estimation) 
-            sum_convariance += K.dot(H_j)
+                measure_dev      = np.matrix([[measure.r - estimation_r], [normalize_angle(measure.theta - estimation_theta)]])
+                sum_estimate    += K.dot(measure_dev) 
+                sum_convariance += K.dot(H)
 
-        self.estimate    = self.estimate + sum_estimate
+
+        self.estimate    = np.add(self.estimate, sum_estimate)
         self.covariance  = (np.identity(self.covariance.shape[0]) - sum_convariance).dot(self.covariance)

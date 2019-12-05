@@ -18,12 +18,11 @@ class Matlab_EKF():
         Landmark.mu_r     = mu_observation[0]
         Landmark.mu_theta = mu_observation[1]
 
-        self.landmarks = []
-
         self.robot = Robot()
         self.robot_noise = Robot()
         self.ekf = EKF_SLAM(MotionModel, Q = Q)
 
+        self.landmarks = []
         self.landmarks_x = []
         self.landmarks_y = []
 
@@ -37,7 +36,10 @@ class Matlab_EKF():
 
         measurements = []
         for landmark in self.landmarks:
-            measurements.append(landmark.make_observation(self.robot.current))
+            
+            measurement = landmark.make_observation(self.robot.current)
+            if (abs(measurement.theta) < np.pi / 3 and measurement.r < 100): 
+                measurements.append(measurement)
 
         self.ekf.update_step(measurements)
 
@@ -50,6 +52,7 @@ class Matlab_EKF():
 
         self.robot_noise.move(v_noise, w_noise, dt)
         self.ekf.prediction_step(v_noise, w_noise, dt)
+
 
     def get_estimate(self):
 
