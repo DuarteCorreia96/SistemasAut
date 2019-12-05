@@ -3,28 +3,39 @@
 % mod = py.importlib.import_module('synth_matlab');
 % py.importlib.reload(mod);
 
+% Parâmetros do ekf
 Q_diag = [1, 1];
 sigma  = 0.05;
 
+% Variâncias dos sensores
 mu_odom = [0.5, 0.1];
 mu_obse = [0.2, 0.05];
 
 ekf = py.synth_matlab.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse);
 
+% Controlos a dar ao robot
 v  = 0.6;
 w  = 0.15;
 dt = 0.02;
 
+% Mudança nos controlos a cada periodo
+w_var = 0.00003;
+v_var = 0;
+
+% Numero de ponto para a animação e quantos ciclos de ekf são skipped entre
+% frames
 skipped = 10;
 npoints = 300;
 xsize = [-4 6];
 ysize = [-1 10];
 
+% Inserir landmarks no simulador
 ekf.add_landmark( 1, 2, 3)
 ekf.add_landmark( 2, 3, 3)
 ekf.add_landmark( 3, 0, 4)
 ekf.add_landmark( 4, 2, 4)
 
+% Não deve ser preciso mexer daqui para baixo
 landmarks_x = np_matlab(ekf.get_landmarks_x());
 landmarks_y = np_matlab(ekf.get_landmarks_y());
 
@@ -39,7 +50,8 @@ noise_path_y = zeros(npoints, 1);
 
 figure('units','normalized','outerposition',[0 0 1 1])
 for i = 1:npoints * skipped
-    w = w + 0.00003;
+    w = w + w_var;
+    v = v + v_var;
     
     ekf.update_step()
     ekf.prediction_step(v, w, dt)
