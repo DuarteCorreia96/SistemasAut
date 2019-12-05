@@ -100,11 +100,11 @@ def main():
     Landmark.mu_theta = 0.02
 
     # Video parameters and simulation
-    v = 0.1
+    v = 0.2
     w = 0.02
     fps = 60
     dt  = 1 / fps
-    frames  = 1000
+    frames  = 250
     skipped = 10
     steps   = frames * skipped
     _print  = False
