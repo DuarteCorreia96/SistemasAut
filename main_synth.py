@@ -6,85 +6,8 @@ import numpy as np
 import random
 
 from ekf import Measurement, EKF_SLAM, MotionModel, normalize_angle
-
-def plot_angle(estimate, style = 'b'):
-
-    x_line = [estimate[0].item(), estimate[0].item() + 0.5 * np.cos(estimate[2].item())]
-    y_line = [estimate[1].item(), estimate[1].item() + 0.5 * np.sin(estimate[2].item())]
-
-    plt.plot(x_line, y_line, style)
-
-class Landmark():
-
-    mu_r     = 0
-    mu_theta = 0
-
-    def __init__(self, mark_id, x, y):
-
-        self.id = mark_id
-        self.x  = x
-        self.y  = y
-
-    def make_observation(self, current):
-
-        deviat_x = self.x - current[0]
-        deviat_y = self.y - current[1]
-
-        r     = np.sqrt(deviat_x ** 2 + deviat_y ** 2)     
-        theta = np.arctan2(deviat_y, deviat_x) - current[2]
-        theta = normalize_angle(theta)
-
-        # # Add noise
-        r     += random.gauss(0, Landmark.mu_r)
-        theta += random.gauss(0, Landmark.mu_theta)
-
-        return Measurement(self.id, r, theta)
-
-
-class Robot():
-
-    def __init__(self):
-
-        self.current = np.array([0, 0, 0])
-
-
-    def move(self, v, w, dt):
-
-        self.current  = MotionModel.get_Pose_Prediction(self.current, v, w, dt)
-
-
-def confidence_ellipse(x, y, ax, cov, facecolor='none', style = 'rx',**kwargs):
-
-    pearson = cov[0, 1] / (cov[0, 0] * cov[1, 1])
-
-    ell_radius_x = np.sqrt(1 + pearson)
-    ell_radius_y = np.sqrt(1 - pearson)
-
-    ellipse = Ellipse((0, 0),
-        width  = ell_radius_x * 2,
-        height = ell_radius_y * 2,
-        facecolor=facecolor,
-        **kwargs)
-
-    # Calculating the stdandard deviation of x from
-    # the squareroot of the variance and multiplying
-    # with the given number of standard deviations.
-    scale_x = np.sqrt(cov[0, 0])
-    mean_x  = np.mean(x)
-
-    # calculating the stdandard deviation of y ...
-    scale_y = np.sqrt(cov[1, 1])
-    mean_y  = np.mean(y)
-
-    transf = transforms.Affine2D() \
-        .rotate_deg(45) \
-        .scale(scale_x, scale_y) \
-        .translate(mean_x, mean_y)
-
-    ellipse.set_transform(transf + ax.transData)
-    plt.plot(x,y, style, markersize = 4)
-
-    return ax.add_patch(ellipse)
+from synth_base import Landmark, Robot
+from animations import plot_angle, confidence_ellipse
 
 def main():
 

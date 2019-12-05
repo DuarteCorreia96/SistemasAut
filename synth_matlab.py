@@ -1,46 +1,8 @@
 import numpy as np
 import random
 
-from ekf import Measurement, EKF_SLAM, MotionModel, normalize_angle
-
-class Landmark():
-
-    mu_r     = 0
-    mu_theta = 0
-
-    def __init__(self, mark_id, x, y):
-
-        self.id = mark_id
-        self.x  = x
-        self.y  = y
-
-    def make_observation(self, current):
-
-        deviat_x = self.x - current[0]
-        deviat_y = self.y - current[1]
-
-        r     = np.sqrt(deviat_x ** 2 + deviat_y ** 2)     
-        theta = np.arctan2(deviat_y, deviat_x) - current[2]
-        theta = normalize_angle(theta)
-
-        # # Add noise
-        r     += random.gauss(0, Landmark.mu_r)
-        theta += random.gauss(0, Landmark.mu_theta)
-
-        return Measurement(self.id, r, theta)
-
-
-class Robot():
-
-    def __init__(self):
-
-        self.current = np.array([0, 0, 0])
-
-
-    def move(self, v, w, dt):
-
-        self.current  = MotionModel.get_Pose_Prediction(self.current, v, w, dt)
-
+from ekf import EKF_SLAM, MotionModel
+from synth_base import Landmark, Robot
 
 class Matlab_EKF():
 
