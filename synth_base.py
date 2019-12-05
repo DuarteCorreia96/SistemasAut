@@ -27,7 +27,7 @@ class Landmark():
         r     += random.gauss(0, Landmark.mu_r)
         theta += random.gauss(0, Landmark.mu_theta)
 
-        return Measurement(self.id, r, theta)
+        return Measurement(self.id, abs(r), theta)
 
 
 class Robot():

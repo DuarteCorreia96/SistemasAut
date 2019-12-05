@@ -1,7 +1,7 @@
-% clear classes
-% 
-% mod = py.importlib.import_module('synth_matlab');
-% py.importlib.reload(mod);
+clear classes
+
+pymod = py.importlib.import_module('synth_matlab');
+py.importlib.reload(pymod);
 
 % Parâmetros do ekf
 Q_diag = [1, 1];
