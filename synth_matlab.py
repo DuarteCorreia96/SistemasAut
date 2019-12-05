@@ -58,3 +58,19 @@ class Matlab_EKF():
     def get_covariance(self):
 
         return self.ekf.covariance
+
+    def get_landmarks_x(self):
+
+        return np.array(self.landmarks_x, ndmin=2)
+
+    def get_landmarks_y(self):
+
+        return np.array(self.landmarks_y, ndmin=2)
+
+    def get_odom(self):
+
+        return np.array(self.robot_noise.current, ndmin=2)
+
+    def get_robot(self):
+
+        return np.array(self.robot.current, ndmin=2)

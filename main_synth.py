@@ -1,6 +1,6 @@
+from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 import matplotlib.animation as manimation
-from matplotlib.patches import Ellipse
 import matplotlib.pyplot as plt
 import numpy as np
 import random
