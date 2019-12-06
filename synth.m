@@ -1,4 +1,4 @@
-clear classes
+% clear classes
 
 addpath('MATLAB_code')
 
