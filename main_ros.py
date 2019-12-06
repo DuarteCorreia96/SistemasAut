@@ -12,6 +12,7 @@ class Aruco():
 
     @staticmethod
     def callback(data):
+        Aruco.ar_list = []
         for marker in data.markers:
             aruco_id = marker.id
             r,theta  = convert_pose(marker.pose.pose.position.x, marker.pose.pose.position.z)
@@ -36,7 +37,7 @@ class Odom():
         Odom.w = msg.twist.twist.angular.z
         new_cur_time = msg.header.stamp.nsecs
 
-        Odom.dt = (new_cur_time - Odom.cur_time)/1e-9
+        Odom.dt = (new_cur_time - Odom.cur_time) * 1e-9
         Odom.cur_time = new_cur_time
 
 
@@ -50,16 +51,24 @@ def main():
    # rospy.init_node('aruco_pose_listener', anonymous=True)
     rospy.Subscriber("/aruco_marker_publisher/markers", MarkerArray, Aruco.callback)
 
-    rate = rospy.Rate(1)
+    rate = rospy.Rate(10)
     while not rospy.is_shutdown():
 
+        # without deadzone
         ekf.prediction_step(Odom.v, Odom.w, Odom.dt)
         ekf.print_state()
-
         #measurs = [Measurement(1, 2, 0.4), Measurement(2, 2, 0.25)]
         ekf.update_step(Aruco.ar_list)
         ekf.print_state()
 
+        # with deadzone 
+        '''
+        if  np.linalg.norm(Odom.v) > 0.1 or np.linalg.norm(Odom.w) > 0.1: 
+            ekf.prediction_step(Odom.v, Odom.w, Odom.dt)
+            ekf.print_state()
+            ekf.update_step(Aruco.ar_list)
+            ekf.print_state()
+        '''
         rate.sleep()
 
 
