@@ -20,6 +20,10 @@ mu_obse = [0.2, 0.08];
 
 ekf = py.synth_matlab.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse);
 
+% Valores máximos observação
+max_angle    = pi / 3;
+max_distance = 100;
+
 % Controlos a dar ao robot
 v  = 0.9;
 w  = 0.1;
@@ -82,7 +86,7 @@ for i = 1:npoints * skipped
     w = w + w_var;
     v = v + v_var;
     
-    ekf.update_step()
+    ekf.update_step(max_angle, max_distance)
     ekf.prediction_step(v, w, dt)
 
     if mod(i, skipped) == 0

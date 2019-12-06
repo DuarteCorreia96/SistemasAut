@@ -32,13 +32,13 @@ class Matlab_EKF():
         self.landmarks_x.append(x)
         self.landmarks_y.append(y)
 
-    def update_step(self):
+    def update_step(self, max_angle, max_distance):
 
         measurements = []
         for landmark in self.landmarks:
             
             measurement = landmark.make_observation(self.robot.current)
-            if (abs(measurement.theta) < np.pi / 3 and measurement.r < 100): 
+            if (abs(measurement.theta) < max_angle and measurement.r < max_distance): 
                 measurements.append(measurement)
 
         self.ekf.update_step(measurements)
