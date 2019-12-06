@@ -11,7 +11,7 @@ py.importlib.reload(pymod_models);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [0.5, 0.5];
+Q_diag = [0.6, 0.6];
 sigma  = 0.04;
 
 % Variâncias dos sensores
@@ -36,7 +36,7 @@ v_var = 0;
 % Numero de ponto para a animação e quantos ciclos de ekf são skipped entre
 % frames
 skipped = 10;
-npoints = 600;
+npoints = 500;
 xsize = [-4 11];
 ysize = [-1 15];
 
