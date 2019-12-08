@@ -14,12 +14,15 @@ class Aruco():
     @staticmethod
     def callback(data):
         Aruco.ar_list = []
+
+        time = data.header.stamp.secs + data.header.stamp.nsecs * 1e-9 
         for marker in data.markers:
             aruco_id = marker.id
             r,theta  = convert_pose(marker.pose.pose.position.x, marker.pose.pose.position.z)
             Aruco.ar_list.append(Measurement(aruco_id, r, theta))
 
-            Aruco.list_to_file.append((data.header.stamp.nsecs, aruco_id, r, theta))
+
+            Aruco.list_to_file.append((time, aruco_id, r, theta))
 
 
 def convert_pose(pose_x, pose_y):
@@ -76,7 +79,7 @@ def main():
 
     with open("data.txt", "w+") as file:
         for item in Aruco.list_to_file:
-            file.write(item)
+            file.write(str(item))
 
 if __name__ == "__main__":
     main()
