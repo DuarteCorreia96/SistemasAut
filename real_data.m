@@ -53,32 +53,36 @@ title('EKF Simulation')
 xlabel('x [m]')
 ylabel('y [m]')
 
-% time_arr = [odom.Time; mocap.Time; aruco_raw(:,1)];
-time_arr = [odom.Time; mocap.Time];
+% aruco_raw(:,1) = aruco_raw(:,1) - bag.StartTime;
+
+time_arr = [odom.Time; mocap.Time; aruco_raw(:,1)];
+% time_arr = [odom.Time; mocap.Time];
 max_time = max(time_arr);
 
 k_mocap = 1;
 k_aruco = 1;
 k_odom  = 1;
 cur_time = 0;
+
 while cur_time < max_time
     disp(cur_time);
     
-%     if k_aruco < length(aruco_raw(:,1)) ...
-%     && (aruco_raw(k_aruco, 1) - cur_time) < (mocap.Time(k_mocap) - cur_time) ...
-%     && (aruco_raw(k_aruco, 1) - cur_time) < (odom.Time(k_odom) - cur_time)
-%        
-%         id    = aruco_raw(k_aruco, 2);
-%         r     = aruco_raw(k_aruco, 3);
-%         theta = aruco_raw(k_aruco, 4);
-%         
-%         ekf.update_step(id, r, theta)
-%     
-%         cur_time = aruco_raw(k_aruco, 1);
-%         k_aruco  = k_aruco + 1;
+    if k_aruco < length(aruco_raw(:,1)) ...
+        && (aruco_raw(k_aruco, 1) - cur_time) < (mocap.Time(k_mocap) - cur_time) ...
+        && (aruco_raw(k_aruco, 1) - cur_time) < (odom.Time(k_odom) - cur_time)
+       
+        id    = aruco_raw(k_aruco, 2);
+        r     = aruco_raw(k_aruco, 3);
+        theta = aruco_raw(k_aruco, 4);
+        
+        ekf.update_step(id, r, theta)
     
-    if k_mocap < length(mocap.Time) && (mocap.Time(k_mocap) - cur_time) < (odom.Time(k_odom) - cur_time)
-%         && (mocap.Time(k_mocap) - cur_time) < (aruco_raw(k_aruco, 1) - cur_time) ...
+        cur_time = aruco_raw(k_aruco, 1);
+        k_aruco  = k_aruco + 1;
+    
+    elseif k_mocap < length(mocap.Time) ...
+        && (mocap.Time(k_mocap) - cur_time) < (odom.Time(k_odom) - cur_time) ...
+        && (mocap.Time(k_mocap) - cur_time) < (aruco_raw(k_aruco, 1) - cur_time)
        
         robot_path_x = -(mocap.Data(1:k_mocap, 1) - mocap.Data(1, 1));
         robot_path_y = -(mocap.Data(1:k_mocap, 2) - mocap.Data(1, 2));
@@ -86,12 +90,13 @@ while cur_time < max_time
         cur_time = mocap.Time(k_mocap);
         k_mocap  = k_mocap + 10;
     
-    elseif k_odom < length(odom.Time) && (odom.Time(k_odom) - cur_time) < (mocap.Time(k_mocap) - cur_time)
-
-%         && (odom.Time(k_odom) - cur_time) < (aruco_raw(k_aruco, 1) - cur_time) ...
+    elseif k_odom < length(odom.Time) ...
+            && (odom.Time(k_odom) - cur_time) < (mocap.Time(k_mocap) - cur_time) ...
+            && (odom.Time(k_odom) - cur_time) < (aruco_raw(k_aruco, 1) - cur_time)
        
         v  = odom.Data(k_odom, 1);
         w  = odom.Data(k_odom, 2);
+        
         if k_odom == 1
             dt = odom.Time(1);
         else
@@ -127,18 +132,18 @@ while cur_time < max_time
     catch
     end
 
-%     for j = 0: (length(covariance) - 3) / 2 - 1
-% 
-%         x = 4 + j * 2;
-%         y = 5 + j * 2;
-%         scatter(estimate(x),estimate(y), 'rx')
-%         try 
-%             h = error_ellipse(covariance(x:y,x:y), estimate(x:y));
-%             h.Color = 'Red';
-%             plot(h)
-%         catch
-%         end
-%     end
+    for j = 0: (length(covariance) - 3) / 2 - 1
+
+        x = 4 + j * 2;
+        y = 5 + j * 2;
+        scatter(estimate(x),estimate(y), 'rx')
+        try 
+            h = error_ellipse(covariance(x:y,x:y), estimate(x:y));
+            h.Color = 'Red';
+            plot(h)
+        catch
+        end
+    end
 end
 
 
