@@ -1,12 +1,12 @@
 import numpy as np
 import random
 
-from ekf_unknown import EKF_SLAM, MotionModel
+from ekf_unknown import EKF_SLAM_unknown, MotionModel
 from synth_base import Landmark, Robot
 
 class Matlab_EKF():
 
-    def __init__(self, Q_diag, sigma, mu_odom, mu_observation):
+    def __init__(self, Q_diag, sigma, mu_odom, mu_observation, alpha = 50):
 
         Q = np.diag(Q_diag)
         MotionModel.sigma = sigma
@@ -20,7 +20,7 @@ class Matlab_EKF():
 
         self.robot = Robot()
         self.robot_noise = Robot()
-        self.ekf = EKF_SLAM(MotionModel, Q = Q)
+        self.ekf = EKF_SLAM_unknown(MotionModel, Q = Q, alpha = alpha)
 
         self.landmarks = []
         self.landmarks_x = []

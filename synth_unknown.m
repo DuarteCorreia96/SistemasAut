@@ -2,23 +2,26 @@ clear classes
 
 addpath('MATLAB_code')
 
-pymod_ekf = py.importlib.import_module('ekf');
+pymod_ekf = py.importlib.import_module('ekf_unknown');
 pymod_models = py.importlib.import_module('synth_base');
-pymod_matlab = py.importlib.import_module('synth_matlab');
+pymod_matlab = py.importlib.import_module('synth_matlab_unknown');
 
 py.importlib.reload(pymod_ekf);
 py.importlib.reload(pymod_models);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [6, 6];
-sigma  = 0.06;
+Q_diag = [10, 10];
+sigma  = 2;
 
 % Variâncias dos sensores
 mu_odom = [0.01, 1];
 mu_obse = [0.01, 0.01];
 
-ekf = py.synth_matlab.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse);
+% Novos landmarks
+alpha = 100;
+
+ekf = py.synth_matlab_unknown.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse, alpha);
 
 % Valores máximos observação
 max_angle    = pi / 3;
