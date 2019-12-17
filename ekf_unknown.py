@@ -23,6 +23,7 @@ class EKF_SLAM_unknown():
 
         # Controls new landmark creation
         self.alpha = alpha
+        self.update_counter = 0
 
     def print_state(self):
 
@@ -94,6 +95,41 @@ class EKF_SLAM_unknown():
                 print("Found new landmark")
                 self.add_landmark(measure)
                 self.N += 1
+
+        # This should improve filter by a lot it simply deletes markers with a single observation every 50 observations
+        self.update_counter += 1
+        if (self.update_counter % 50 == 0):
+
+            delete_counter = 0
+            truth = self.covariance == self.max_conv
+            for k in range(3, len(truth), 2):
+                if (OP(truth[k]) and OP(truth[k + 1])):
+
+                    # delete rows
+                    self.covariance = np.delete(self.covariance, k - delete_counter, 0)
+                    self.covariance = np.delete(self.covariance, k - delete_counter, 0)
+
+                    self.estimate  = np.delete(self.estimate, k - delete_counter, 0)
+                    self.estimate  = np.delete(self.estimate, k - delete_counter, 0)
+
+                    # delete columns
+                    self.covariance = np.delete(self.covariance, k - delete_counter, 1)
+                    self.covariance = np.delete(self.covariance, k - delete_counter, 1)
+
+                    # update delete counter
+                    delete_counter += 2
+                    self.N -= 1
+            
+            self.update_counter = 0
+
+def OP(l):
+    true_found = False
+    for v in l:
+        if v and not true_found:
+            true_found=True
+        elif v and true_found:
+             return False #"Too Many Trues"
+    return true_found
 
 class Supposition():
 
