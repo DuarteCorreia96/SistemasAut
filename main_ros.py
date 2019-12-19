@@ -79,7 +79,7 @@ def main():
 
     with open("data.txt", "w+") as file:
         for item in Aruco.list_to_file:
-            file.write(str(item)+"\n")
+            file.write(str(item))
 
 if __name__ == "__main__":
     main()
