@@ -9,7 +9,7 @@ py.importlib.reload(pymod_ekf);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [0.06, 0.01];
+Q_diag = [0.06, 0.5];
 sigma  = 0.1;
 L = 1;
 
@@ -34,7 +34,6 @@ robot_path_y = [];
 landmarks_x = [0.68 1.35 2.53 3.57] + mocap.Data(1,1);
 landmarks_y = [-0.12 0.62 0.67 -0.35] + mocap.Data(1,2);
 
-
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
 set(fig,'defaultLegendAutoUpdate','off')
 hold on
@@ -55,11 +54,9 @@ legend(h, 'Robot','Estimate', 'Estimate Covariance' ,'Odom', ...
     'Landmark', 'Landmark Estimation', 'Landmark Covariance', ...
     'Location', 'Northeast');
 
-title('EKF Simulation')
+title('EKF Real Data')
 xlabel('x [m]')
 ylabel('y [m]')
-
-% aruco(:,1) = aruco(:,1) - bag.StartTime;
 
 time_arr = [odom.Time; mocap.Time; aruco(:,1)];
 % time_arr = [odom.Time; mocap.Time];
@@ -111,7 +108,7 @@ while cur_time < max_time
         
         if (abs(v)) > 0.01 || (abs(w)) > 1e-3
             ekf.prediction_step(v, w, dt)
-        end
+        end        
         
         cur_time = odom.Time(k_odom);
         k_odom  = k_odom + 1;

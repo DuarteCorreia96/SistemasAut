@@ -1,5 +1,5 @@
-bag_name = 'pinto.bag';
-bag_location = strcat('D:\bags\',bag_name);
+bag_name = 'pinto';
+bag_location = strcat('D:\bags\',bag_name,'.bag');
 bag = rosbag(bag_location);
 
 odom_bag = select(bag, 'Topic', '/pioneer/pose');
