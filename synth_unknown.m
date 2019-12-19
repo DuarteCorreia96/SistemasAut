@@ -11,15 +11,15 @@ py.importlib.reload(pymod_models);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [10, 10];
-sigma  = 2;
+Q_diag = [150, 150];
+sigma  = 3;
 
 % Variâncias dos sensores
 mu_odom = [0.01, 1];
-mu_obse = [0.01, 0.01];
+mu_obse = [0.05, 0.05];
 
 % Novos landmarks
-alpha = 100;
+alpha = 30;
 
 ekf = py.synth_matlab_unknown.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse, alpha);
 
@@ -40,14 +40,19 @@ v_var = 0;
 % frames
 skipped = 10;
 npoints = 400;
-xsize = [-4 11];
-ysize = [-1 15];
+xsize = [-4 20];
+ysize = [-5 15];
+cov_scaling = 30;
 
 % Inserir landmarks no simulador
 ekf.add_landmark( 1, 5, 7)
 ekf.add_landmark( 3,-2, 10)
 ekf.add_landmark( 4, 8, 12)
 ekf.add_landmark( 5,-2, 1)
+ekf.add_landmark( 6, 10, 2)
+ekf.add_landmark( 7, 15, 3)
+ekf.add_landmark( 7, 12, 8)
+ekf.add_landmark( 7, 4, 12)
 
 % Não deve ser preciso mexer daqui para baixo
 landmarks_x = np_matlab(ekf.get_landmarks_x());
@@ -119,7 +124,7 @@ for i = 1:npoints * skipped
         plot(estim_path_x(1:k), estim_path_y(1:k), 'blue.-')
 
         try 
-            h = error_ellipse(covariance(1:2,1:2), estimate(1:2));
+            h = error_ellipse(covariance(1:2,1:2)/cov_scaling, estimate(1:2));
             h.Color = 'Blue';
             plot(h)
         catch
@@ -131,7 +136,7 @@ for i = 1:npoints * skipped
             y = 5 + j * 2;
             scatter(estimate(x),estimate(y), 'rx')
             try 
-                h = error_ellipse(covariance(x:y,x:y), estimate(x:y));
+                h = error_ellipse(covariance(x:y,x:y)/cov_scaling, estimate(x:y));
                 h.Color = 'Red';
                 plot(h)
             catch
