@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-from ekf_unknown import EKF_SLAM, MotionModel
+from ekf import EKF_SLAM, MotionModel
 from synth_base import Landmark, Robot
 
 class Matlab_EKF():

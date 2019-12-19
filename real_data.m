@@ -9,7 +9,7 @@ py.importlib.reload(pymod_ekf);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [0.06, 0.06];
+Q_diag = [0.06, 0.01];
 sigma  = 0.1;
 L = 1;
 
@@ -30,9 +30,15 @@ ysize = [-7 7];
 robot_path_x = [];
 robot_path_y = [];
 
+% MoCap Frame to World Frame!
+landmarks_x = [0.68 1.35 2.53 3.57] + mocap.Data(1,1);
+landmarks_y = [-0.12 0.62 0.67 -0.35] + mocap.Data(1,2);
+
+
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
 set(fig,'defaultLegendAutoUpdate','off')
 hold on
+box on
 grid minor
 xlim(xsize)
 ylim(ysize)
@@ -53,9 +59,9 @@ title('EKF Simulation')
 xlabel('x [m]')
 ylabel('y [m]')
 
-% aruco_raw(:,1) = aruco_raw(:,1) - bag.StartTime;
+% aruco(:,1) = aruco(:,1) - bag.StartTime;
 
-time_arr = [odom.Time; mocap.Time; aruco_raw(:,1)];
+time_arr = [odom.Time; mocap.Time; aruco(:,1)];
 % time_arr = [odom.Time; mocap.Time];
 max_time = max(time_arr);
 
@@ -67,22 +73,22 @@ cur_time = 0;
 while cur_time < max_time
     disp(cur_time);
     
-    if k_aruco < length(aruco_raw(:,1)) ...
-        && (aruco_raw(k_aruco, 1) - cur_time) < (mocap.Time(k_mocap) - cur_time) ...
-        && (aruco_raw(k_aruco, 1) - cur_time) < (odom.Time(k_odom) - cur_time)
+    if k_aruco < length(aruco(:,1)) ...
+        && (aruco(k_aruco, 1) - cur_time) < (mocap.Time(k_mocap) - cur_time) ...
+        && (aruco(k_aruco, 1) - cur_time) < (odom.Time(k_odom) - cur_time)
        
-        id    = aruco_raw(k_aruco, 2);
-        r     = aruco_raw(k_aruco, 3);
-        theta = aruco_raw(k_aruco, 4);
+        id    = aruco(k_aruco, 2);
+        r     = sqrt(aruco(k_aruco, 3)^2 + aruco(k_aruco, 4)^2);
+        theta = -atan2(aruco(k_aruco, 3), aruco(k_aruco, 4));
         
         ekf.update_step(id, r, theta)
     
-        cur_time = aruco_raw(k_aruco, 1);
+        cur_time = aruco(k_aruco, 1);
         k_aruco  = k_aruco + 1;
     
     elseif k_mocap < length(mocap.Time) ...
         && (mocap.Time(k_mocap) - cur_time) < (odom.Time(k_odom) - cur_time) ...
-        && (mocap.Time(k_mocap) - cur_time) < (aruco_raw(k_aruco, 1) - cur_time)
+        && (mocap.Time(k_mocap) - cur_time) < (aruco(k_aruco, 1) - cur_time)
        
         robot_path_x = -(mocap.Data(1:k_mocap, 1) - mocap.Data(1, 1));
         robot_path_y = -(mocap.Data(1:k_mocap, 2) - mocap.Data(1, 2));
@@ -92,7 +98,7 @@ while cur_time < max_time
     
     elseif k_odom < length(odom.Time) ...
             && (odom.Time(k_odom) - cur_time) < (mocap.Time(k_mocap) - cur_time) ...
-            && (odom.Time(k_odom) - cur_time) < (aruco_raw(k_aruco, 1) - cur_time)
+            && (odom.Time(k_odom) - cur_time) < (aruco(k_aruco, 1) - cur_time)
        
         v  = odom.Data(k_odom, 1);
         w  = odom.Data(k_odom, 2);
@@ -117,7 +123,7 @@ while cur_time < max_time
     estimate   = np_matlab(ekf.get_estimate());
     covariance = np_matlab(ekf.get_covariance());
 
-%     scatter(landmarks_x, landmarks_y, 'gx')
+    scatter(landmarks_x, landmarks_y, 'gx')
 
     plot(robot_path_x, robot_path_y, 'g.-')
 

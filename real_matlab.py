@@ -1,7 +1,8 @@
 import numpy as np
 import random
 
-from base_ekf import EKF_SLAM, MotionModel, Measurement
+from base_ekf import MotionModel, Measurement
+from ekf import EKF_SLAM
 
 class Matlab_EKF():
 
