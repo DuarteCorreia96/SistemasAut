@@ -15,7 +15,7 @@ Q_diag = [0.6, 0.6];
 sigma  = 0.04;
 
 % Variâncias dos sensores
-mu_odom = [0.8, 0.5];
+mu_odom = [0.2, 3];
 mu_obse = [0.2, 0.08];
 
 ekf = py.synth_matlab.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse);
@@ -36,7 +36,7 @@ v_var = 0;
 % Numero de ponto para a animação e quantos ciclos de ekf são skipped entre
 % frames
 skipped = 10;
-npoints = 500;
+npoints = 400;
 xsize = [-4 11];
 ysize = [-1 15];
 
