@@ -9,8 +9,8 @@ py.importlib.reload(pymod_ekf);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [0.06, 0.5];
-sigma  = 0.1;
+Q_diag = [0.2, 0.05];
+sigma  = 0.01;
 L = 1;
 
 ekf = py.real_matlab.Matlab_EKF(Q_diag, sigma, L);

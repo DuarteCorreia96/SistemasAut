@@ -1,4 +1,4 @@
-bag_name = 'pinto0';
+bag_name = 'pinto2';
 bag_location = strcat('D:\bags\pinto\',bag_name,'.bag');
 bag = rosbag(bag_location);
 
