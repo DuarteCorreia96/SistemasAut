@@ -162,5 +162,5 @@ class Supposition():
 
             self.H            = np.array([H_x, H_y]).dot(F_xj)
             self.measure_dev  = np.array([[measure.r - estimation_r], [normalize_angle(measure.theta - estimation_theta)]])
-            self.psi          = self.H.dot(ekf.covariance).dot(np.transpose(self.H)) + ekf.Q
+            self.psi          = self.H.dot(ekf.covariance).dot(np.transpose(self.H)) + ekf.Q * (measure.r ** 2)
             self.pi           = np.asscalar(np.transpose(self.measure_dev).dot(self.psi).dot(self.measure_dev))

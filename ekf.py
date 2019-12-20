@@ -124,7 +124,7 @@ class EKF_SLAM():
                 H   = np.matrix([H_x, H_y]).dot(F_xj)
 
                 K     = self.covariance.dot(np.transpose(H))
-                K_aux = np.add(H.dot(self.covariance).dot(np.transpose(H)), self.Q) 
+                K_aux = np.add(H.dot(self.covariance).dot(np.transpose(H)), self.Q * (measure.r ** 2)) 
                 K     = K.dot(np.linalg.inv(K_aux))
 
                 estimation_r     = error
