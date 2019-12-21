@@ -117,8 +117,8 @@ while cur_time < max_time
             ekf.prediction_step(v, w, dt)
         end
         
-        robot_odom_x = odom.Data(k_odom, 3);
-        robot_odom_y = odom.Data(k_odom, 4);
+        robot_odom_x = odom.Data(1:k_odom, 3);
+        robot_odom_y = odom.Data(1:k_odom, 4);
         
         cur_time = odom.Time(k_odom);
         k_odom  = k_odom + 1;
