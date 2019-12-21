@@ -1,4 +1,4 @@
-bag_name = 'pinto2';
+bag_name = 'pinto';
 bag_location = strcat('D:\bags\pinto\',bag_name,'.bag');
 bag = rosbag(bag_location);
 
@@ -7,8 +7,10 @@ mocap_bag = select(bag, 'Topic', '/mocap_node/Robot_1/ground_pose');
 aruco_bag = select(bag, 'Topic','/aruco_marker_publisher/markers');
 
 odom = timeseries(odom_bag, 'Twist.Twist.Linear.X', ...
-                           'Twist.Twist.Angular.Z');
-                       
+                           'Twist.Twist.Angular.Z', ...
+                           'Pose.Pose.Position.X', ...
+                           'Pose.Pose.Position.Y');
+
 mocap = timeseries(mocap_bag, 'X', 'Y');
 
 aruco_msgs = readMessages(aruco_bag,'DataFormat','struct');
@@ -53,6 +55,8 @@ aruco(~any(aruco,2),:) = [];
 % aruco_raw = table2array(table);
 % aruco_raw(:,1) = aruco_raw(:,1) - aruco_raw(1,1);
 % aruco_raw(:,1) = aruco_raw(:,1) + aruco_bag.StartTime;
+
+odom.Data(:,3:4) = odom.Data(:,3:4) - odom.Data(1,3:4);
 
 odom.Time = odom.Time - bag.StartTime;
 mocap.Time = mocap.Time - bag.StartTime;

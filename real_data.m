@@ -29,6 +29,8 @@ ysize = [-7 7];
 
 robot_path_x = [];
 robot_path_y = [];
+robot_odom_x = [];
+robot_odom_y = [];
 
 % MoCap Frame to World Frame!
 % landmarks_x = [0.68 1.35 2.53 3.57] + mocap.Data(1,1);
@@ -113,7 +115,10 @@ while cur_time < max_time
         
         if (abs(v)) > 0.01 || (abs(w)) > 1e-3
             ekf.prediction_step(v, w, dt)
-        end        
+        end
+        
+        robot_odom_x = odom.Data(k_odom, 3);
+        robot_odom_y = odom.Data(k_odom, 4);
         
         cur_time = odom.Time(k_odom);
         k_odom  = k_odom + 1;
@@ -128,6 +133,7 @@ while cur_time < max_time
     scatter(landmarks_x, landmarks_y, 'gx')
 
     plot(robot_path_x, robot_path_y, 'g.-')
+    plot(robot_odom_x, robot_odom_y, 'r.-')
 
     estim_path_x(k_odom) = estimate(1);
     estim_path_y(k_odom) = estimate(2);
