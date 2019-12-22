@@ -11,22 +11,22 @@ py.importlib.reload(pymod_models);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [6, 6];
-sigma  = 0.06;
+Q_diag = [0.06, 0.06];
+sigma  = 0.01;
 
 % Variâncias dos sensores
 mu_odom = [0.01, 1];
-mu_obse = [0.01, 0.01];
+mu_obse = [0.01, 0.02];
 
 ekf = py.synth_matlab.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse);
 
 % Valores máximos observação
-max_angle    = pi / 3;
+max_angle    = pi / 6;
 max_distance = 1000;
 
 % Controlos a dar ao robot
-v  = 0.9;
-w  = 0.1;
+v  = 0.09;
+w  = 0.06;
 dt = 0.01;
 
 % Mudança nos controlos a cada periodo
@@ -36,15 +36,19 @@ v_var = 0;
 % Numero de ponto para a animação e quantos ciclos de ekf são skipped entre
 % frames
 skipped = 10;
-npoints = 400;
-xsize = [-4 11];
-ysize = [-1 15];
+npoints = 300;
+xsize = [-.5 1.6];
+ysize = [-.1 1.8];
 
 % Inserir landmarks no simulador
-ekf.add_landmark( 1, 5, 7)
-ekf.add_landmark( 3,-2, 10)
-ekf.add_landmark( 4, 8, 12)
-ekf.add_landmark( 5,-2, 1)
+ekf.add_landmark( 1, -0.5, 0.5)
+ekf.add_landmark( 2,  0.5, 1.5)
+% ekf.add_landmark( 3, .5, 1.2)
+% ekf.add_landmark( 4,-.2, .1)
+% ekf.add_landmark( 8,-.1, 1.2)
+% ekf.add_landmark( 5, 1.0, .2)
+% ekf.add_landmark( 6, 1.5, .3)
+% ekf.add_landmark( 7, 1.2, 1.1)
 
 % Não deve ser preciso mexer daqui para baixo
 landmarks_x = np_matlab(ekf.get_landmarks_x());
@@ -59,7 +63,8 @@ estim_path_y = zeros(npoints, 1);
 noise_path_x = zeros(npoints, 1);
 noise_path_y = zeros(npoints, 1);
 
-fig = figure('units','normalized','outerposition',[0 0 1 1]);
+% fig = figure('units','normalized','outerposition',[0 0 1 1]);
+fig = figure();
 set(fig,'defaultLegendAutoUpdate','off')
 hold on
 grid minor
@@ -67,18 +72,18 @@ xlim(xsize)
 ylim(ysize)
 
 h = zeros(3, 1);
-h(1) = plot(NaN, NaN, 'g.-');
+h(1) = plot(NaN, NaN, 'k.-');
 h(2) = plot(NaN, NaN, 'b.-');
 h(3) = scatter(NaN, NaN, 'ob');
-h(4) = plot(NaN, NaN, 'r.-');
+h(4) = plot(NaN, NaN, 'y.-');
 h(5) = scatter(NaN, NaN, 'xg');
 h(6) = scatter(NaN, NaN, 'xr');
 h(7) = scatter(NaN, NaN, 'or');
-legend(h, 'Robot','Estimate', 'Estimate Covariance' ,'Odom', ...
-    'Landmark', 'Landmark Estimation', 'Landmark Covariance', ...
-    'Location', 'Northeast');
+% legend(h, 'Robot','Estimate', 'Estimate Covariance' ,'Odom', ...
+%     'Landmark', 'Landmark Estimation', 'Landmark Covariance', ...
+%     'Location', 'Northeast');
 
-title('EKF Simulation')
+title('EKF-SLAM with Known Correspondences using Synthetic Data')
 xlabel('x [m]')
 ylabel('y [m]')
 
@@ -98,18 +103,18 @@ for i = 1:npoints * skipped
         estimate   = np_matlab(ekf.get_estimate());
         covariance = np_matlab(ekf.get_covariance());
 
-        scatter(landmarks_x, landmarks_y, 'gx')
+        scatter(landmarks_x, landmarks_y, 'kx')
 
         current_robot = np_matlab(ekf.get_robot());
         current_noise = np_matlab(ekf.get_odom());
 
         robot_path_x(k) = current_robot(1);
         robot_path_y(k) = current_robot(2);
-        plot(robot_path_x(1:k), robot_path_y(1:k), 'g.-')
+        plot(robot_path_x(1:k), robot_path_y(1:k), 'k.-')
         
         noise_path_x(k) = current_noise(1);
         noise_path_y(k) = current_noise(2);
-        plot(noise_path_x(1:k), noise_path_y(1:k), 'r.-')
+        plot(noise_path_x(1:k), noise_path_y(1:k), 'y.-')
         
         estim_path_x(k) = estimate(1);
         estim_path_y(k) = estimate(2);

@@ -88,6 +88,7 @@ class EKF_SLAM():
 
         # This should be modfied after confirming measurements data structure
         for measure in measurements:
+
             j = self.ids.get_index(measure.id)
             if (j == None):
 

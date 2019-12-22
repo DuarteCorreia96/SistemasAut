@@ -86,7 +86,7 @@ class EKF_SLAM_unknown():
                     best_supp = copy.deepcopy(supp)
 
             if (best_supp.pi < self.alpha * measure.r):
-                if (best_supp.error != 0):
+                if (best_supp.error != 0 and best_supp.measure_dev[1] < np.pi / 6):
                     K = self.covariance.dot(np.transpose(best_supp.H)).dot(best_supp.psi_inv) 
                     self.estimate   +=  K.dot(best_supp.measure_dev)
                     self.covariance  = (np.identity(self.covariance.shape[0]) - K.dot(best_supp.H)).dot(self.covariance)
@@ -97,30 +97,30 @@ class EKF_SLAM_unknown():
                 self.N += 1
 
         # This should improve filter by a lot it simply deletes markers with a single observation every 50 observations
-        self.update_counter += 1
-        if (self.update_counter % 50 == 0):
+        # self.update_counter += 1
+        # if (self.update_counter % 50 == 0):
 
-            delete_counter = 0
-            truth = self.covariance == self.max_conv
-            for k in range(3, len(truth), 2):
-                if (OP(truth[k]) and OP(truth[k + 1])):
+        #     delete_counter = 0
+        #     truth = self.covariance == self.max_conv
+        #     for k in range(3, len(truth), 2):
+        #         if (OP(truth[k]) and OP(truth[k + 1])):
 
-                    # delete rows
-                    self.covariance = np.delete(self.covariance, k - delete_counter, 0)
-                    self.covariance = np.delete(self.covariance, k - delete_counter, 0)
+        #             # delete rows
+        #             self.covariance = np.delete(self.covariance, k - delete_counter, 0)
+        #             self.covariance = np.delete(self.covariance, k - delete_counter, 0)
 
-                    self.estimate  = np.delete(self.estimate, k - delete_counter, 0)
-                    self.estimate  = np.delete(self.estimate, k - delete_counter, 0)
+        #             self.estimate  = np.delete(self.estimate, k - delete_counter, 0)
+        #             self.estimate  = np.delete(self.estimate, k - delete_counter, 0)
 
-                    # delete columns
-                    self.covariance = np.delete(self.covariance, k - delete_counter, 1)
-                    self.covariance = np.delete(self.covariance, k - delete_counter, 1)
+        #             # delete columns
+        #             self.covariance = np.delete(self.covariance, k - delete_counter, 1)
+        #             self.covariance = np.delete(self.covariance, k - delete_counter, 1)
 
-                    # update delete counter
-                    delete_counter += 2
-                    self.N -= 1
+        #             # update delete counter
+        #             delete_counter += 2
+        #             self.N -= 1
             
-            self.update_counter = 0
+        #     self.update_counter = 0
 
 def OP(l):
     true_found = False
@@ -143,7 +143,7 @@ class Supposition():
         deviat_y = np.asscalar(ekf.estimate[j_y] - ekf.estimate[1])
         deviat   = np.array([[deviat_x], [deviat_y]])
 
-        sq_error   = np.asscalar(np.transpose(deviat).dot(deviat))
+        sq_error = np.asscalar(np.transpose(deviat).dot(deviat))
         error = np.sqrt(sq_error)
 
         self.error = error

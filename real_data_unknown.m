@@ -14,14 +14,14 @@ sigma  = 0.02;
 L = 0.2;
 
 alpha = 0.04;
-elipse_ratio = 1;
+elipse_ratio = 10;
 
 ekf = py.real_matlab_unknown.Matlab_EKF(Q_diag, sigma, L, alpha);
 
-% Numero de ponto para a animação e quantos ciclos de ekf são skipped entre
-% frames
-xsize = [-7 7];
-ysize = [-7 7];
+% Limites
+xsize = [-3 3];
+ysize = [-3 4];
+elipse_ratio = 10;
 
 % Não deve ser preciso mexer daqui para baixo
 % estim_path_x = zeros(npoints, 1);
@@ -39,12 +39,17 @@ robot_odom_y = [];
 % landmarks_x = [0.68 1.35 2.53 3.57] + mocap.Data(1,1);
 % landmarks_y = [-0.12 0.62 0.67 -0.35] + mocap.Data(1,2);
 
-landmarks_x = [0.57   2.55   3.57    1.19   3.84 ...
-               3.10   1.39   -1.23   0.12   -0.15] + mocap.Data(1,1);
-landmarks_y = [-0.22    0.74    -0.38    0.77    -2.21 ...
-               -2.69    -2.71   -1.47    -2.51   1.20] + mocap.Data(1,2);
+% landmarks_x = [0.57   2.55   3.57    1.19   3.84 ...
+%                3.10   1.39   -1.23   0.12   -0.15] + mocap.Data(1,1);
+% landmarks_y = [-0.22    0.74    -0.38    0.77    -2.21 ...
+%                -2.69    -2.71   -1.47    -2.51   1.20] + mocap.Data(1,2);
+           
+% duarte.bag
+landmarks_x = [-2.83     -3.50    -1.27    -2.48    -4.70    -4.70 ] - mocap.Data(1,1);
+landmarks_y = [1.23    -0.36    2.74   3.41   -0.02    1.23] - mocap.Data(1,2);
 
-fig = figure('units','normalized','outerposition',[0 0 1 1]);
+% fig = figure('units','normalized','outerposition',[0 0 1 1]);
+fig = figure();
 set(fig,'defaultLegendAutoUpdate','off')
 hold on
 box on
@@ -53,18 +58,18 @@ xlim(xsize)
 ylim(ysize)
 
 h = zeros(3, 1);
-h(1) = plot(NaN, NaN, 'g.-');
+h(1) = plot(NaN, NaN, 'k.-');
 h(2) = plot(NaN, NaN, 'b.-');
 h(3) = scatter(NaN, NaN, 'ob');
 h(4) = plot(NaN, NaN, 'r.-');
-h(5) = scatter(NaN, NaN, 'xg');
+h(5) = scatter(NaN, NaN, 'xk');
 h(6) = scatter(NaN, NaN, 'xr');
 h(7) = scatter(NaN, NaN, 'or');
-legend(h, 'Robot','Estimate', 'Estimate Covariance' ,'Odom', ...
-    'Landmark', 'Landmark Estimation', 'Landmark Covariance', ...
-    'Location', 'Northeast');
+% legend(h, 'Robot','Estimate', 'Estimate Covariance' ,'Odom', ...
+%     'Landmark', 'Landmark Estimation', 'Landmark Covariance', ...
+%     'Location', 'NorthWest');
 
-title('EKF Real Data')
+title('EKF-SLAM with Unknown Correspondences using Real Data')
 xlabel('x [m]')
 ylabel('y [m]')
 
@@ -78,6 +83,7 @@ k_odom  = 1;
 cur_time = 0;
 
 while cur_time < max_time
+           
     disp(cur_time);
     
     if k_aruco < length(aruco(:,1)) ...
@@ -97,8 +103,8 @@ while cur_time < max_time
         && (mocap.Time(k_mocap) - cur_time) < (odom.Time(k_odom) - cur_time) ...
         && (mocap.Time(k_mocap) - cur_time) < (aruco(k_aruco, 1) - cur_time)
        
-        robot_path_x = -(mocap.Data(1:k_mocap, 1) - mocap.Data(1, 1));
-        robot_path_y = -(mocap.Data(1:k_mocap, 2) - mocap.Data(1, 2));
+        robot_path_x = (mocap.Data(1:k_mocap, 1) - mocap.Data(1, 1));
+        robot_path_y = (mocap.Data(1:k_mocap, 2) - mocap.Data(1, 2));
     
         cur_time = mocap.Time(k_mocap);
         k_mocap  = k_mocap + 10;
@@ -134,17 +140,17 @@ while cur_time < max_time
     estimate   = np_matlab(ekf.get_estimate());
     covariance = np_matlab(ekf.get_covariance());
 
-    scatter(landmarks_x, landmarks_y, 'gx')
-    plot(robot_odom_x, robot_odom_y, 'r.-')
+    scatter(landmarks_x, landmarks_y, 'kx')
+    plot(robot_odom_x, robot_odom_y, 'y.-')
 
-    plot(robot_path_x, robot_path_y, 'g.-')
+    plot(robot_path_x, robot_path_y, 'k.-')
 
     estim_path_x(k_odom) = estimate(1);
     estim_path_y(k_odom) = estimate(2);
     plot(estim_path_x(1:k_odom), estim_path_y(1:k_odom), 'blue.-')
     
     try 
-        h = error_ellipse(covariance(1:2,1:2), estimate(1:2));
+        h = error_ellipse(covariance(1:2,1:2)/elipse_ratio, estimate(1:2));
         h.Color = 'Blue';
         plot(h)
     catch
@@ -156,7 +162,7 @@ while cur_time < max_time
         y = 5 + j * 2;
         scatter(estimate(x),estimate(y), 'rx')
         try 
-            h = error_ellipse(covariance(x:y,x:y), estimate(x:y));
+            h = error_ellipse(covariance(x:y,x:y)/elipse_ratio, estimate(x:y));
             h.Color = 'Red';
             plot(h)
         catch

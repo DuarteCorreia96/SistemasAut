@@ -11,16 +11,16 @@ py.importlib.reload(pymod_models);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [4, 4];
-sigma  = 0.05;
+Q_diag = [0.5, 0.5];
+sigma  = 0.02;
 
 % Variâncias dos sensores
-mu_odom = [0.01, 0.5];
-mu_obse = [0.05, 0.05];
+mu_odom = [0.05, 0.5];
+mu_obse = [0.002, 0.01];
 
 % Novos landmarks
-L = 10;
-alpha = 0.02;
+L = 0.2;
+alpha = 0.5;
 cov_scaling = 1;
 
 ekf = py.synth_matlab_unknown.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse, L, alpha);
@@ -30,7 +30,7 @@ max_angle    = pi / 3;
 max_distance = 1000;
 
 % Controlos a dar ao robot
-v  = 0.9;
+v  = 0.09;
 w  = 0.1;
 dt = 0.01;
 
@@ -42,18 +42,17 @@ v_var = 0;
 % frames
 skipped = 10;
 npoints = 400;
-xsize = [-4 20];
-ysize = [-5 15];
+xsize = [-0.4 2.0];
+ysize = [-0.5 1.5];
 
 
 % Inserir landmarks no simulador
-ekf.add_landmark( 1, 5, 7)
-ekf.add_landmark( 3,-2, 10)
-ekf.add_landmark( 4, 5, 12)
-ekf.add_landmark( 5,-2, 1)
-ekf.add_landmark( 6, 10, 2)
-ekf.add_landmark( 7, 15, 3)
-ekf.add_landmark( 7, 12, 8)
+ekf.add_landmark( 1, 0.5, 0.7)
+ekf.add_landmark( 2,-0.2, 1)
+ekf.add_landmark( 4,-0.2, 0.1)
+ekf.add_landmark( 5, 1.0, 0.2)
+ekf.add_landmark( 6, 1.5, 0.3)
+ekf.add_landmark( 7, 1.2, 1.1)
 
 
 % Não deve ser preciso mexer daqui para baixo
@@ -107,6 +106,8 @@ for i = 1:npoints * skipped
 
         estimate   = np_matlab(ekf.get_estimate());
         covariance = np_matlab(ekf.get_covariance());
+        
+        disp(estimate(3))
 
         scatter(landmarks_x, landmarks_y, 'gx')
 
