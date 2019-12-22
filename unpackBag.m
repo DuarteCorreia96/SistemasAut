@@ -1,4 +1,4 @@
-bag_name = 'duarte';
+bag_name = 'pinto2';
 bag_location = strcat('bags\',bag_name,'.bag');
 bag = rosbag(bag_location);
 

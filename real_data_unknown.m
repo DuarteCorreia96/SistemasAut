@@ -9,12 +9,12 @@ py.importlib.reload(pymod_ekf);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [100, 100];
-sigma  = 0.01;
-L = 1;
+Q_diag = [0.5, 0.5];
+sigma  = 0.02;
+L = 0.2;
 
-alpha = 40;
-elipse_ratio = 30;
+alpha = 0.04;
+elipse_ratio = 1;
 
 ekf = py.real_matlab_unknown.Matlab_EKF(Q_diag, sigma, L, alpha);
 
@@ -32,6 +32,8 @@ ysize = [-7 7];
 
 robot_path_x = [];
 robot_path_y = [];
+robot_odom_x = [];
+robot_odom_y = [];
 
 % MoCap Frame to World Frame!
 % landmarks_x = [0.68 1.35 2.53 3.57] + mocap.Data(1,1);
@@ -116,7 +118,11 @@ while cur_time < max_time
         
         if (abs(v)) > 0.01 || (abs(w)) > 1e-3
             ekf.prediction_step(v, w, dt)
-        end        
+        end
+        
+        current_noise = np_matlab(ekf.get_odom());
+        robot_odom_x(k_odom) = current_noise(1);
+        robot_odom_y(k_odom) = current_noise(2);
         
         cur_time = odom.Time(k_odom);
         k_odom  = k_odom + 1;
@@ -129,15 +135,16 @@ while cur_time < max_time
     covariance = np_matlab(ekf.get_covariance());
 
     scatter(landmarks_x, landmarks_y, 'gx')
+    plot(robot_odom_x, robot_odom_y, 'r.-')
 
     plot(robot_path_x, robot_path_y, 'g.-')
 
     estim_path_x(k_odom) = estimate(1);
     estim_path_y(k_odom) = estimate(2);
     plot(estim_path_x(1:k_odom), estim_path_y(1:k_odom), 'blue.-')
-
+    
     try 
-        h = error_ellipse(covariance(1:2,1:2) / elipse_ratio, estimate(1:2));
+        h = error_ellipse(covariance(1:2,1:2), estimate(1:2));
         h.Color = 'Blue';
         plot(h)
     catch
@@ -149,12 +156,11 @@ while cur_time < max_time
         y = 5 + j * 2;
         scatter(estimate(x),estimate(y), 'rx')
         try 
-            h = error_ellipse(covariance(x:y,x:y) / elipse_ratio, estimate(x:y));
+            h = error_ellipse(covariance(x:y,x:y), estimate(x:y));
             h.Color = 'Red';
             plot(h)
         catch
         end
     end
 end
-
 

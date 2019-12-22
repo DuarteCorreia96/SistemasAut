@@ -10,7 +10,7 @@ def normalize_angle(angle):
 
 class MotionModel():
 
-    L = 10
+    L = 100
     sigma = 0.05
 
     @staticmethod

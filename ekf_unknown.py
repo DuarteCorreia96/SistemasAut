@@ -85,9 +85,9 @@ class EKF_SLAM_unknown():
                 if (supp.pi < best_supp.pi):
                     best_supp = copy.deepcopy(supp)
 
-            if (best_supp.pi < self.alpha):
+            if (best_supp.pi < self.alpha * measure.r):
                 if (best_supp.error != 0):
-                    K = self.covariance.dot(np.transpose(best_supp.H)).dot(np.linalg.inv(best_supp.psi)) 
+                    K = self.covariance.dot(np.transpose(best_supp.H)).dot(best_supp.psi_inv) 
                     self.estimate   +=  K.dot(best_supp.measure_dev)
                     self.covariance  = (np.identity(self.covariance.shape[0]) - K.dot(best_supp.H)).dot(self.covariance)
 
@@ -162,5 +162,5 @@ class Supposition():
 
             self.H            = np.array([H_x, H_y]).dot(F_xj)
             self.measure_dev  = np.array([[measure.r - estimation_r], [normalize_angle(measure.theta - estimation_theta)]])
-            self.psi          = self.H.dot(ekf.covariance).dot(np.transpose(self.H)) + ekf.Q * (measure.r ** 2)
-            self.pi           = np.asscalar(np.transpose(self.measure_dev).dot(self.psi).dot(self.measure_dev))
+            self.psi_inv      = np.linalg.inv(self.H.dot(ekf.covariance).dot(np.transpose(self.H)) + ekf.Q * (measure.r ** 2))
+            self.pi           = np.asscalar(np.transpose(self.measure_dev).dot(self.psi_inv).dot(self.measure_dev))

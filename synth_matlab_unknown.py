@@ -6,10 +6,11 @@ from synth_base import Landmark, Robot
 
 class Matlab_EKF():
 
-    def __init__(self, Q_diag, sigma, mu_odom, mu_observation, alpha = 50):
+    def __init__(self, Q_diag, sigma, mu_odom, mu_observation, L = 1, alpha = 50):
 
         Q = np.diag(Q_diag)
         MotionModel.sigma = sigma
+        MotionModel.L = L
 
         # Measurement noises
         self.mu_v = mu_odom[0]

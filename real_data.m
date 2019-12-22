@@ -117,8 +117,9 @@ while cur_time < max_time
             ekf.prediction_step(v, w, dt)
         end
         
-        robot_odom_x = odom.Data(1:k_odom, 3);
-        robot_odom_y = odom.Data(1:k_odom, 4);
+        current_noise = np_matlab(ekf.get_odom());
+        robot_odom_x(k_odom) = current_noise(1);
+        robot_odom_y(k_odom) = current_noise(2);
         
         cur_time = odom.Time(k_odom);
         k_odom  = k_odom + 1;
@@ -131,14 +132,14 @@ while cur_time < max_time
     covariance = np_matlab(ekf.get_covariance());
 
     scatter(landmarks_x, landmarks_y, 'gx')
+    plot(robot_odom_x, robot_odom_y, 'r.-')
 
     plot(robot_path_x, robot_path_y, 'g.-')
-    plot(robot_odom_x, robot_odom_y, 'r.-')
 
     estim_path_x(k_odom) = estimate(1);
     estim_path_y(k_odom) = estimate(2);
     plot(estim_path_x(1:k_odom), estim_path_y(1:k_odom), 'blue.-')
-
+    
     try 
         h = error_ellipse(covariance(1:2,1:2), estimate(1:2));
         h.Color = 'Blue';

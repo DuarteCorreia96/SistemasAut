@@ -11,17 +11,19 @@ py.importlib.reload(pymod_models);
 py.importlib.reload(pymod_matlab);
 
 % Parâmetros do ekf
-Q_diag = [150, 150];
-sigma  = 3;
+Q_diag = [4, 4];
+sigma  = 0.05;
 
 % Variâncias dos sensores
-mu_odom = [0.01, 1];
+mu_odom = [0.01, 0.5];
 mu_obse = [0.05, 0.05];
 
 % Novos landmarks
-alpha = 30;
+L = 10;
+alpha = 0.02;
+cov_scaling = 1;
 
-ekf = py.synth_matlab_unknown.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse, alpha);
+ekf = py.synth_matlab_unknown.Matlab_EKF(Q_diag, sigma, mu_odom, mu_obse, L, alpha);
 
 % Valores máximos observação
 max_angle    = pi / 3;
@@ -42,17 +44,17 @@ skipped = 10;
 npoints = 400;
 xsize = [-4 20];
 ysize = [-5 15];
-cov_scaling = 30;
+
 
 % Inserir landmarks no simulador
 ekf.add_landmark( 1, 5, 7)
 ekf.add_landmark( 3,-2, 10)
-ekf.add_landmark( 4, 8, 12)
+ekf.add_landmark( 4, 5, 12)
 ekf.add_landmark( 5,-2, 1)
 ekf.add_landmark( 6, 10, 2)
 ekf.add_landmark( 7, 15, 3)
 ekf.add_landmark( 7, 12, 8)
-ekf.add_landmark( 7, 4, 12)
+
 
 % Não deve ser preciso mexer daqui para baixo
 landmarks_x = np_matlab(ekf.get_landmarks_x());
@@ -111,13 +113,13 @@ for i = 1:npoints * skipped
         current_robot = np_matlab(ekf.get_robot());
         current_noise = np_matlab(ekf.get_odom());
 
-        robot_path_x(k) = current_robot(1);
-        robot_path_y(k) = current_robot(2);
-        plot(robot_path_x(1:k), robot_path_y(1:k), 'g.-')
-        
         noise_path_x(k) = current_noise(1);
         noise_path_y(k) = current_noise(2);
         plot(noise_path_x(1:k), noise_path_y(1:k), 'r.-')
+        
+        robot_path_x(k) = current_robot(1);
+        robot_path_y(k) = current_robot(2);
+        plot(robot_path_x(1:k), robot_path_y(1:k), 'g.-')
         
         estim_path_x(k) = estimate(1);
         estim_path_y(k) = estimate(2);
